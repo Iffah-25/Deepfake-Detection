@@ -2,27 +2,89 @@ import torch
 from models.afem import AFEM
 
 
-print("Starting AFEM adaptive gating test...\n")
+def main():
 
-# Create a simulated batch of images
-x = torch.rand(2, 3, 224, 224)
+    print("Starting AFEM Frequency Band Test...\n")
 
-# Initialize AFEM
-afem = AFEM()
+    # -----------------------------------------
+    # Create simulated face image batch
+    # -----------------------------------------
 
-# Forward pass
-output, gate_weight = afem(x)
+    x = torch.rand(
+        2,
+        3,
+        224,
+        224
+    )
 
-# Print information
-print("Input shape:", x.shape)
-print("Output shape:", output.shape)
-print("Gate weights:", gate_weight.flatten())
+    # -----------------------------------------
+    # Create AFEM
+    # -----------------------------------------
 
-# Check shapes
-assert x.shape == output.shape
+    afem = AFEM(
+        in_channels=3
+    )
 
-# Check gate values
-assert torch.all(gate_weight >= 0)
-assert torch.all(gate_weight <= 1)
+    # -----------------------------------------
+    # Forward Pass
+    # -----------------------------------------
 
-print("\nAFEM adaptive gating test passed successfully!")
+    output, gate_weights = afem(x)
+
+    # -----------------------------------------
+    # Display Results
+    # -----------------------------------------
+
+    print("Input shape:")
+    print(x.shape)
+
+    print("\nOutput shape:")
+    print(output.shape)
+
+    print("\nGate weights:")
+    print(gate_weights)
+
+    print("\nLow Frequency Weights:")
+    print(gate_weights[:, 0])
+
+    print("\nMid Frequency Weights:")
+    print(gate_weights[:, 1])
+
+    print("\nHigh Frequency Weights:")
+    print(gate_weights[:, 2])
+
+    # -----------------------------------------
+    # Tests
+    # -----------------------------------------
+
+    # Output must have same shape
+    assert x.shape == output.shape, (
+        "ERROR: Output shape does not match input shape"
+    )
+
+    # Gate must generate 3 weights
+    assert gate_weights.shape == (2, 3), (
+        "ERROR: Gate weights should have shape [Batch, 3]"
+    )
+
+    # Gate values must be between 0 and 1
+    assert torch.all(gate_weights >= 0), (
+        "ERROR: Gate weights below 0"
+    )
+
+    assert torch.all(gate_weights <= 1), (
+        "ERROR: Gate weights above 1"
+    )
+
+    # Output should not contain NaN values
+    assert not torch.isnan(output).any(), (
+        "ERROR: Output contains NaN values"
+    )
+
+    print("\n====================================")
+    print("AFEM FREQUENCY BAND TEST PASSED!")
+    print("====================================")
+
+
+if __name__ == "__main__":
+    main()
