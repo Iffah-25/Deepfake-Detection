@@ -1,0 +1,71 @@
+# =========================
+# Virtual Environment
+# =========================
+venv/
+.venv/
+
+# =========================
+# Python Cache
+# =========================
+__pycache__/
+*.py[cod]
+*$py.class
+
+# =========================
+# Dataset Files
+# =========================
+data/raw/
+data/processed/
+
+# Keep folder structure but ignore dataset contents
+data/raw/*
+data/processed/*
+
+# =========================
+# Model Checkpoints
+# =========================
+*.pth
+*.pt
+*.ckpt
+*.onnx
+
+# =========================
+# Results / Large Files
+# =========================
+results/checkpoints/
+results/graphs/*.png
+results/graphs/*.jpg
+
+# =========================
+# Jupyter Notebook
+# =========================
+.ipynb_checkpoints/
+
+# =========================
+# VS Code
+# =========================
+.vscode/
+
+# =========================
+# Environment Variables / Secrets
+# =========================
+.env
+*.env
+
+# =========================
+# Operating System Files
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# Python Testing / Coverage
+# =========================
+.pytest_cache/
+.coverage
+htmlcov/
+
+# =========================
+# Logs
+# =========================
+*.log
