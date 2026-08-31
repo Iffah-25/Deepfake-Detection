@@ -1,31 +1,28 @@
-print("Program started")
-
 import torch
 from models.afem import AFEM
 
-print("PyTorch imported successfully")
 
-# Simulate a batch of face images
+print("Starting AFEM adaptive gating test...\n")
+
+# Create a simulated batch of images
 x = torch.rand(2, 3, 224, 224)
 
-print("Input tensor created")
-
-# Create AFEM
+# Initialize AFEM
 afem = AFEM()
 
-print("AFEM model created")
+# Forward pass
+output, gate_weight = afem(x)
 
-# Run AFEM
-output = afem(x)
-
-print("AFEM executed")
-
+# Print information
 print("Input shape:", x.shape)
 print("Output shape:", output.shape)
+print("Gate weights:", gate_weight.flatten())
 
-# Check reconstruction error
-error = torch.mean(torch.abs(x - output))
+# Check shapes
+assert x.shape == output.shape
 
-print("Reconstruction error:", error.item())
+# Check gate values
+assert torch.all(gate_weight >= 0)
+assert torch.all(gate_weight <= 1)
 
-print("Program finished")
+print("\nAFEM adaptive gating test passed successfully!")
