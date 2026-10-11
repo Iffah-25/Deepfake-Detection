@@ -212,8 +212,13 @@ This project investigates **context-aware frequency analysis as a preprocessing 
 The reported experiments compare classification metrics and explore whether frequency-domain information can provide complementary cues for detecting manipulated facial images.
 
 ## Contributors
+**Team Members**
+1. Ms. Iffah Sarang - T.E CSE AIML
+2. Mr. Huzaifa Ansari - T.E CSE AIML
+3. Mr. Saif Annsari - T.E CSE AIML
+4. Ms. Sanjana Mane -  T.E CSE AIML
 
-Add the names of the project team members and supervisor here.
+**Project Guide** : Prof. Maaz Chogle
 
 - **Project:** Context-Aware Frequency Analysis as a Preprocessing Stage for Deepfake Detection
 - **Degree:** Bachelor of Engineering
