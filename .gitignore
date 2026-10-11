@@ -1,0 +1,23 @@
+# Python virtual environments
+.venv/
+.venv311/
+venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Model checkpoints
+checkpoints/*.pth
+checkpoints/*.pt
+checkpoints/*.ckpt
+
+# Datasets
+datasets/
+
+# Local environment variables
+.env
+.env.*
+
+# Keep example environment configuration
+!.env.example
