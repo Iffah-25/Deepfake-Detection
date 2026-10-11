@@ -31,11 +31,24 @@ if not CHECKPOINT.exists() and CHECKPOINT_URL:
     try:
         logger.info(f"Checkpoint not found locally. Downloading from: {CHECKPOINT_URL}")
         CHECKPOINT.parent.mkdir(parents=True, exist_ok=True)
-        # Stream download with temporary file to prevent incomplete checkpoints
         temp_checkpoint = CHECKPOINT.with_suffix(".tmp")
-        urllib.request.urlretrieve(CHECKPOINT_URL, temp_checkpoint)
+        req = urllib.request.Request(
+            CHECKPOINT_URL,
+            headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) FreqGuard-Backend/1.0"}
+        )
+        with urllib.request.urlopen(req) as resp, open(temp_checkpoint, "wb") as out_f:
+            chunk_size = 1024 * 1024  # 1 MB chunks
+            downloaded = 0
+            while True:
+                chunk = resp.read(chunk_size)
+                if not chunk:
+                    break
+                out_f.write(chunk)
+                downloaded += len(chunk)
+                if downloaded % (10 * 1024 * 1024) == 0:
+                    logger.info(f"Downloading checkpoint: {downloaded / (1024 * 1024):.1f} MB received...")
         temp_checkpoint.replace(CHECKPOINT)
-        logger.info(f"Checkpoint successfully downloaded to: {CHECKPOINT}")
+        logger.info(f"Checkpoint successfully downloaded ({downloaded / (1024 * 1024):.2f} MB) to: {CHECKPOINT}")
     except Exception as e:
         logger.error(f"Failed to download checkpoint from {CHECKPOINT_URL}: {e}")
         raise RuntimeError(f"Failed to download checkpoint from CHECKPOINT_URL: {e}")
