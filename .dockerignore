@@ -1,0 +1,29 @@
+# Ignore git metadata
+.git/
+.gitignore
+
+# Ignore local virtual environments
+.venv/
+.venv311/
+venv/
+env/
+
+# Ignore Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Ignore frontend directory (deployed separately on Vercel)
+frontend/
+
+# Ignore local datasets, notebooks, and experiments
+datasets/
+notebooks/
+experiments/
+reports/
+*.ipynb
+
+# Ignore local documentation & logs
+*.log
+.vscode/
+.idea/

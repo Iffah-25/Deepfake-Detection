@@ -18,6 +18,7 @@ import {
   FacebookIcon, 
   WhatsAppIcon 
 } from "../components/SocialIcons";
+import CybercrimeAssistant from "../components/CybercrimeAssistant";
 
 export default function Guidelines() {
   const getIcon = (iconName) => {
@@ -47,11 +48,16 @@ export default function Guidelines() {
           <span>Incident Response & Safety Action Center</span>
         </div>
         <h1 className="text-3xl sm:text-5xl font-extrabold text-white font-['Outfit']">
-          Deepfake Mitigation & Reporting Guide
+          Cybercrime Complaint Assistance & Action Guide
         </h1>
         <p className="text-base text-slate-300">
-          Official, step-by-step procedures for removing non-consensual synthetic media, preserving forensic evidence, and filing cyber law complaints.
+          Official, step-by-step procedures for removing non-consensual synthetic media, preserving forensic evidence, and filing cybercrime complaints on cybercrime.gov.in.
         </p>
+      </div>
+
+      {/* Interactive Cybercrime Complaint Assistant Workflow */}
+      <div className="pt-2">
+        <CybercrimeAssistant />
       </div>
 
       {/* 5-Step Protocol Banner */}

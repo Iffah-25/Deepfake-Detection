@@ -1,27 +1,22 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useLocation, Link, useNavigate } from "react-router-dom";
+import { useParams, useLocation, Link } from "react-router-dom";
 import { 
-  Shield, 
   Sparkles, 
-  Radio, 
-  Layers, 
   Activity, 
-  Calendar, 
   Download, 
-  Share2, 
   AlertTriangle, 
   CheckCircle2, 
   HelpCircle, 
   ArrowLeft, 
   Cpu, 
   FileText,
-  ExternalLink,
-  Printer
+  Printer,
+  Info,
+  Hash
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import { useAuth } from "../context/AuthContext";
 import { getAnalysisById } from "../services/analysisService";
-import { formatBytes, formatDate } from "../utils/formatters";
 import ResultBadge from "../components/ResultBadge";
 import ConfidenceMeter from "../components/ConfidenceMeter";
 import FrequencyVisualizer from "../components/FrequencyVisualizer";
@@ -73,11 +68,24 @@ export default function Result() {
 
   const handleDownloadJSON = () => {
     if (!analysis) return;
-    const blob = new Blob([JSON.stringify(analysis, null, 2)], { type: "application/json" });
+    const reportPayload = {
+      ...analysis,
+      reportType: "Technical Forensic Assessment Report",
+      modelVersion: analysis.modelVersion || "AFEM-Xception-v2",
+      sha256: analysis.fileHash || analysis.metrics?.sha256 || "N/A",
+      limitations:
+        "A detector's score is a technical estimate and should be presented as supporting information only. " +
+        "The confidence score is not necessarily a calibrated probability and may contain false positives or false negatives. " +
+        "This technical assessment does not constitute legally conclusive proof.",
+      officialPortal: "https://cybercrime.gov.in/",
+      nationalHelpline: "1930 (Cyber Crime) / 112 (Emergency Police)",
+      generatedAt: new Date().toISOString()
+    };
+    const blob = new Blob([JSON.stringify(reportPayload, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `FreqGuard-Report-${analysis.id}.json`;
+    a.download = `FreqGuard-Forensic-Report-${analysis.id}.json`;
     a.click();
   };
 
@@ -134,7 +142,7 @@ export default function Result() {
             className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-medium text-slate-300 transition"
           >
             <Download className="w-3.5 h-3.5 text-indigo-400" />
-            <span>Export JSON</span>
+            <span>Download Technical Report</span>
           </button>
           <button
             onClick={handlePrintReport}
@@ -184,7 +192,7 @@ export default function Result() {
 
             <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
               {isFake && (
-                "The analysis system identified strong anomalous high-frequency energy spikes and contextual facial boundary mismatches characteristic of generative AI synthesis."
+                "The analysis system identified anomalous high-frequency energy patterns and contextual inconsistencies characteristic of generative AI synthesis."
               )}
               {isReal && (
                 "The submitted media exhibits natural frequency decay profiles adhering to physical camera sensor characteristics and consistent contextual lighting."
@@ -194,23 +202,25 @@ export default function Result() {
               )}
             </p>
 
-            {/* If Fake, prominent Take Action trigger */}
-            {isFake && (
-              <div className="pt-2">
-                <button
-                  onClick={() => {
-                    setShowActionCenter(true);
-                    setTimeout(() => {
-                      document.getElementById("action-center-section")?.scrollIntoView({ behavior: "smooth" });
-                    }, 100);
-                  }}
-                  className="inline-flex items-center space-x-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-rose-600 to-rose-500 hover:from-rose-500 hover:to-rose-400 text-white text-xs font-bold shadow-lg shadow-rose-600/30 transition hover:scale-105"
-                >
-                  <AlertTriangle className="w-4 h-4" />
-                  <span>Take Action / Report Suspicious Content</span>
-                </button>
-              </div>
-            )}
+            {/* What should I do next? trigger button */}
+            <div className="pt-2 flex flex-wrap gap-2.5 justify-center md:justify-start">
+              <button
+                onClick={() => {
+                  setShowActionCenter(true);
+                  setTimeout(() => {
+                    document.getElementById("action-center-section")?.scrollIntoView({ behavior: "smooth" });
+                  }, 100);
+                }}
+                className={`inline-flex items-center space-x-2 px-6 py-2.5 rounded-xl text-white text-xs font-bold shadow-lg transition hover:scale-105 ${
+                  isFake
+                    ? "bg-gradient-to-r from-rose-600 to-rose-500 hover:from-rose-500 hover:to-rose-400 shadow-rose-600/30"
+                    : "bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 shadow-indigo-600/30"
+                }`}
+              >
+                <AlertTriangle className="w-4 h-4" />
+                <span>What Should I Do Next? — Cybercrime Complaint Guide</span>
+              </button>
+            </div>
           </div>
 
           {/* Right: Circular Confidence Gauge */}
@@ -222,6 +232,14 @@ export default function Result() {
             />
           </div>
 
+        </div>
+
+        {/* Technical Estimate & Limitations Notice (Section 1 & 2) */}
+        <div className="mt-6 pt-4 border-t border-slate-800/80 flex items-start space-x-3 text-xs text-slate-400">
+          <Info className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+          <p className="leading-relaxed">
+            <strong className="text-slate-300">Technical Estimate Notice:</strong> A detector's score is a technical probabilistic estimate and supporting information only. It is not legally conclusive proof that a crime was committed or that media was intentionally falsified. Model scores may include false positives or false negatives.
+          </p>
         </div>
       </div>
 
@@ -261,6 +279,16 @@ export default function Result() {
               <span className="text-indigo-400 font-bold">{analysis.modelVersion}</span>
             </div>
           </div>
+
+          {(analysis.fileHash || analysis.metrics?.sha256) && (
+            <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 text-[11px] font-mono flex items-center justify-between text-slate-400">
+              <span className="flex items-center space-x-1.5 truncate">
+                <Hash className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                <span className="text-[10px] text-slate-500 uppercase">SHA-256:</span>
+                <span className="text-slate-300 truncate select-all">{analysis.fileHash || analysis.metrics?.sha256}</span>
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Right Col: Spectral Breakdown & Metrics */}
@@ -358,6 +386,7 @@ export default function Result() {
       {(isFake || showActionCenter) && (
         <div id="action-center-section" className="pt-4">
           <ActionCard
+            analysis={analysis}
             analysisId={analysis.id}
             fileName={analysis.fileName}
           />

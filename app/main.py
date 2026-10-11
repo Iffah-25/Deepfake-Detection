@@ -1,6 +1,10 @@
 
+import hashlib
 import io
+import logging
+import os
 import time
+import urllib.request
 import uuid
 from pathlib import Path
 
@@ -12,31 +16,69 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from src.afem_model import AFEMXceptionV2
 
+logger = logging.getLogger("uvicorn.error")
 
 ROOT = Path(__file__).resolve().parent.parent
-CHECKPOINT = ROOT / "checkpoints" / "afem_v2_xception_best.pth"
-
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
+
+# Resolve checkpoint path and download from URL if missing
+CHECKPOINT_PATH_ENV = os.getenv("CHECKPOINT_PATH")
+CHECKPOINT = Path(CHECKPOINT_PATH_ENV) if CHECKPOINT_PATH_ENV else (ROOT / "checkpoints" / "afem_v2_xception_best.pth")
+CHECKPOINT_URL = os.getenv("CHECKPOINT_URL")
+
+if not CHECKPOINT.exists() and CHECKPOINT_URL:
+    try:
+        logger.info(f"Checkpoint not found locally. Downloading from: {CHECKPOINT_URL}")
+        CHECKPOINT.parent.mkdir(parents=True, exist_ok=True)
+        # Stream download with temporary file to prevent incomplete checkpoints
+        temp_checkpoint = CHECKPOINT.with_suffix(".tmp")
+        urllib.request.urlretrieve(CHECKPOINT_URL, temp_checkpoint)
+        temp_checkpoint.replace(CHECKPOINT)
+        logger.info(f"Checkpoint successfully downloaded to: {CHECKPOINT}")
+    except Exception as e:
+        logger.error(f"Failed to download checkpoint from {CHECKPOINT_URL}: {e}")
+        raise RuntimeError(f"Failed to download checkpoint from CHECKPOINT_URL: {e}")
+
+if not CHECKPOINT.exists():
+    raise FileNotFoundError(
+        f"Checkpoint not found at '{CHECKPOINT}'. "
+        "Place afem_v2_xception_best.pth in checkpoints/ or set the CHECKPOINT_URL environment variable."
+    )
 
 app = FastAPI(
     title="AFEM Deepfake Detection API",
     version="1.0.0",
 )
 
+# Dynamic CORS Configuration
+DEFAULT_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+env_origins = os.getenv("ALLOWED_ORIGINS", "")
+if env_origins:
+    allowed_origins = [orig.strip() for orig in env_origins.split(",") if orig.strip()]
+    for default in DEFAULT_ORIGINS:
+        if default not in allowed_origins:
+            allowed_origins.append(default)
+else:
+    allowed_origins = DEFAULT_ORIGINS
+
+# Support regex for Vercel preview & production deployments (*.vercel.app)
+# Pass ALLOWED_ORIGIN_REGEX="" to disable regex matching
+allowed_origin_regex = os.getenv("ALLOWED_ORIGIN_REGEX", r"^https://.*\.vercel\.app$")
+if allowed_origin_regex == "":
+    allowed_origin_regex = None
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-    ],
+    allow_origins=allowed_origins,
+    allow_origin_regex=allowed_origin_regex,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-if not CHECKPOINT.exists():
-    raise FileNotFoundError(f"Checkpoint not found: {CHECKPOINT}")
 
 model = AFEMXceptionV2(num_classes=2)
 
@@ -71,6 +113,7 @@ def health():
         "status": "ok",
         "model": "AFEM-Xception-v2",
         "device": str(DEVICE),
+        "checkpoint": CHECKPOINT.name,
     }
 
 
@@ -97,6 +140,8 @@ async def detect(file: UploadFile = File(...)):
             status_code=413,
             detail="Image must be 10 MB or smaller.",
         )
+
+    file_hash = hashlib.sha256(contents).hexdigest()
 
     try:
         with Image.open(io.BytesIO(contents)) as image:
@@ -136,6 +181,7 @@ async def detect(file: UploadFile = File(...)):
         "confidence": round(confidence, 2),
         "processingTime": elapsed_ms,
         "modelVersion": "AFEM-Xception-v2",
+        "fileHash": file_hash,
         "message": (
             "Model prediction only; this result is not definitive proof "
             "of authenticity or manipulation."
@@ -144,5 +190,7 @@ async def detect(file: UploadFile = File(...)):
             "realProbability": round(real_probability * 100, 2),
             "fakeProbability": round(fake_probability * 100, 2),
             "maskMean": round(float(mask.mean().item()), 4),
+            "sha256": file_hash,
         },
     }
+

@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: deepfake-detection-backend
+    env: docker
+    plan: starter # 1 GB RAM required for PyTorch + AFEM-Xception model (free 512MB tier will OOM)
+    dockerfilePath: Dockerfile
+    healthCheckPath: /api/health
+    envVars:
+      - key: ALLOWED_ORIGINS
+        sync: false # Set to your Vercel URL, e.g. https://deepfake-detection.vercel.app
+      - key: CHECKPOINT_URL
+        sync: false # Set to your GitHub Releases or Cloud Storage direct download URL
